@@ -1,0 +1,41 @@
+<html>
+<head>
+    <title>PyNavigo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" href="static/css/style.css" />
+    <script src="static/js/scripts.js"></script>
+    <script src="http://openlayers.org/api/OpenLayers.js"></script>
+</head>
+<body onload="getLocation();">
+    <span style="float:left;">
+        <a href="/"><h1>PyNavigo</h1></a>
+        </span>
+    <span style="float:right;">
+        <a href="address" rel="noreferrer" target="_blank">
+        <img src="static/img/logo.png" /></a>
+    </span>
+    <div style="clear: both;"></div>
+    <hr />
+
+    <h2><a href="/">Itinerary service</a></h2>
+        <form method=GET action="/">
+            Departure:&nbsp;&nbsp;&nbsp;
+            <input type="text" name="departure" id="departure" value="" placeholder="(Latitude, Longitude) or enter an address." maxlength=150 autocomplete="on" size="50" />
+            <br />
+            Destination:&nbsp;
+            <input type="text" name="destination" id="destination" value="" placeholder="(Latitude, Longitude) or enter an address." maxlength=150 autocomplete="on" size="50" /><br />
+            Time of departure:&nbsp;<input type="datetime" name="time_departure" value={{now}} />
+            <p>Format of the output:</p>
+            <input type="radio" checked="yes" name="output" value="map" /> OpenStreetMap Map<br />
+            <input type="radio" name="output" value="waypoints" /> List of waypoints<br />
+            <input type="radio" name="output" value="gpx" /> GPX<br />
+            <br />
+            <input type="submit" value="OK">
+        </form>
+        <p>You are here:</p>
+        <div align="center">
+            <div id="mapitinerary" style="align:center;width:400;height:300"></div>
+        </div>
+        <div align="center" id="myposition"></div>
+    </body>
+</html>
