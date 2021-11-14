@@ -5,7 +5,6 @@ import math
 import time
 import datetime
 import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
 import json
 import io as StringIO
 

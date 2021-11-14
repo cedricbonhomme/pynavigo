@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import datetime
-
 from flask import render_template
 
 
-from . import utils
-from . import graphloader
-
+from pynavigo import utils
+from pynavigo import graphloader
 from pynavigo import app
 
 
