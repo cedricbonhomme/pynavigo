@@ -8,14 +8,16 @@ __revision__ = "$Date: 2012/05/10 $"
 __copyright__ = "Copyright (c) 2013-2021 Cedric Bonhomme"
 __license__ = ""
 
-import dijkstra
-import isolated
-import utils
+from . import dijkstra
+from . import isolated
+from . import utils
+
 
 class Node(object):
     """
     Represent a node.
     """
+
     def __init__(self, osm_id, longitude, latitude):
         """
         Components of a node.
@@ -31,10 +33,12 @@ class Node(object):
         """
         return str(self.osm_id) + " " + str(self.latitude) + " " + str(self.longitude)
 
+
 class Edge(object):
     """
     Represent an edge (can be oriented).
     """
+
     def __init__(self, fromnode, tonode, time, distance, speed):
         self.fromnode = fromnode
         self.tonode = tonode
@@ -51,11 +55,13 @@ class Edge(object):
     def __repr__(self):
         return str(self.distance)
 
+
 class Way(object):
     """
     Represent an OSM way. In our graph structure an OSM way
     is represented by one ore more edges.
     """
+
     def __init__(self, refs, oneway, speed_limit=50):
         """
         A way can be one sided.
@@ -77,6 +83,7 @@ class Graph(object):
     A graph is represented with dictionaries.
     http://www.python.org/doc/essays/graphs/
     """
+
     def __init__(self):
         """
         Initializes the graph.
@@ -89,7 +96,7 @@ class Graph(object):
         """
         Adds a node with no neighbors.
         """
-        if node_id not in self.graph_structure.keys():
+        if node_id not in list(self.graph_structure.keys()):
             self.graph_structure[node_id] = {}
             self.graph_info[node_id] = Node(node_id, longitude, latitude)
 
@@ -106,7 +113,7 @@ class Graph(object):
         """
         Delete a node from the graph.
         """
-        for neighbor_id in self.graph_structure[node_id].keys():
+        for neighbor_id in list(self.graph_structure[node_id].keys()):
             del self.graph_structure[neighbor_id][node_id]
         del self.graph_structure[node_id]
         del self.graph_info[node_id]
@@ -123,8 +130,11 @@ class Graph(object):
         """
         Remove nodes with no relation.
         """
-        isolated_nodes = [node for node in self.graph_structure.keys() \
-                                    if self.graph_structure[node] == {}]
+        isolated_nodes = [
+            node
+            for node in list(self.graph_structure.keys())
+            if self.graph_structure[node] == {}
+        ]
         for node in isolated_nodes:
             self.removeNode(node)
         return len(isolated_nodes)
@@ -136,7 +146,7 @@ class Graph(object):
         remove = isolated.RemoveIslands(self)
         biggest_connected_graph = remove.getNodesIslands()
 
-        for node in self.graph_structure.keys():
+        for node in list(self.graph_structure.keys()):
             if node not in biggest_connected_graph:
                 self.removeNode(node)
 
@@ -144,25 +154,32 @@ class Graph(object):
         """
         Return the length in meter of a way.
         """
-        way_list = zip(way, way[1:])
-        return sum([self.graph_structure[edge[0]][edge[1]].distance for edge in way_list])
+        way_list = list(zip(way, way[1:]))
+        return sum(
+            [self.graph_structure[edge[0]][edge[1]].distance for edge in way_list]
+        )
 
     def time_way(self, way):
         """
         Returns the time needed to cross a way.
         """
-        way_list = zip(way, way[1:])
-        return sum([self.graph_structure[edge[0]][edge[1]].distance / (self.graph_structure[edge[0]][edge[1]].speed * 1000)  \
-                            for edge in way_list])
+        way_list = list(zip(way, way[1:]))
+        return sum(
+            [
+                self.graph_structure[edge[0]][edge[1]].distance
+                / (self.graph_structure[edge[0]][edge[1]].speed * 1000)
+                for edge in way_list
+            ]
+        )
 
     def average_speed(self, path):
         """
         Evaluates the average speed of a path.
         """
-        way_list = zip(path, path[1:])
+        way_list = list(zip(path, path[1:]))
         l = [self.graph_structure[edge[0]][edge[1]].speed for edge in way_list]
         try:
-            return sum(l)/len(l)
+            return sum(l) / len(l)
         except ZeroDivisionError:
             return 90
 
@@ -173,8 +190,10 @@ class Graph(object):
         """
         result = None
         distance_min = float("inf")
-        for node in self.graph_info.values():
-            distance = utils.EarthDistance((latitude, longitude), (node.latitude, node.longitude))
+        for node in list(self.graph_info.values()):
+            distance = utils.EarthDistance(
+                (latitude, longitude), (node.latitude, node.longitude)
+            )
             if distance <= distance_min:
                 distance_min = distance
                 result = node
@@ -184,7 +203,7 @@ class Graph(object):
         """
         Return the number of nodes.
         """
-        return len(self.graph_info.keys())
+        return len(list(self.graph_info.keys()))
 
     def nb_edges(self, oriented=False):
         """
@@ -192,43 +211,50 @@ class Graph(object):
         """
         count = 0
         if oriented:
-            for i in self.graph_structure.keys():
-                for j in self.graph_structure[i].keys():
+            for i in list(self.graph_structure.keys()):
+                for j in list(self.graph_structure[i].keys()):
                     if self.graph_structure[i][j].distance != float("inf"):
                         count += 1
         else:
-            count = sum([len(self.graph_structure[i].keys()) for i in self.graph_structure.keys()]) / 2
+            count = (
+                sum(
+                    [
+                        len(list(self.graph_structure[i].keys()))
+                        for i in list(self.graph_structure.keys())
+                    ]
+                )
+                / 2
+            )
         return count
 
     def matrix(self):
         """
         Matrix display of the graph.
         """
-        print " ",
+        print(" ", end=" ")
         for i in sorted(self.graph_structure.keys()):
-            print i,
-        print
+            print(i, end=" ")
+        print()
         for i in sorted(self.graph_structure.keys()):
-            print i,
+            print(i, end=" ")
             for j in sorted(self.graph_structure.keys()):
-                if i in self.graph_structure[j].keys():
-                    #print self.graph_structure[i][j],
-                    print '1',
+                if i in list(self.graph_structure[j].keys()):
+                    # print self.graph_structure[i][j],
+                    print("1", end=" ")
                 else:
-                    print '0',
-            print
+                    print("0", end=" ")
+            print()
 
     def adjacency_list(self):
         """
         Displays the graph as an adjacency lists.
         """
         for i in sorted(self.graph_structure.keys()):
-            print i, " --> ",
-            print self.graph_structure[i].items()
+            print(i, " --> ", end=" ")
+            print(list(self.graph_structure[i].items()))
 
     def __eq__(self, graphe1):
-        """
-        """
+        """ """
         return self.graph_structure == graphe1
 
     def __str__(self):
@@ -237,8 +263,11 @@ class Graph(object):
         """
         result = ""
         for i in sorted(self.graph_structure.keys()):
-            result +=  str(i) + " --> "
-            result += ", ".join([str(elem) for elem in self.graph_structure[i].keys()]) + "\n"
+            result += str(i) + " --> "
+            result += (
+                ", ".join([str(elem) for elem in list(self.graph_structure[i].keys())])
+                + "\n"
+            )
         return result
 
     def __repr__(self):
@@ -263,7 +292,7 @@ class Graph(object):
             try:
                 self.graph_info[ref].use += 1
             except:
-                print "Key Error with node id:", ref
+                print("Key Error with node id:", ref)
                 pass
 
     def addEdge(self, fromnode, tonode, distance, speed_limit=None, oneway=False):
@@ -271,11 +300,17 @@ class Graph(object):
         Add a directed edge with a cost (distance).
         An edge is a part of a way.
         """
-        self.graph_structure[fromnode][tonode] = Edge(fromnode, tonode, None, distance, speed_limit) # TODO: None should be the time
+        self.graph_structure[fromnode][tonode] = Edge(
+            fromnode, tonode, None, distance, speed_limit
+        )  # TODO: None should be the time
         if not oneway:
-            self.graph_structure[tonode][fromnode] = Edge(tonode, fromnode, None, distance, speed_limit)
+            self.graph_structure[tonode][fromnode] = Edge(
+                tonode, fromnode, None, distance, speed_limit
+            )
         else:
-            self.graph_structure[tonode][fromnode] = Edge(tonode, fromnode, None, float("inf"), speed_limit)
+            self.graph_structure[tonode][fromnode] = Edge(
+                tonode, fromnode, None, float("inf"), speed_limit
+            )
 
     def create_graph_structure(self):
         """
@@ -284,23 +319,33 @@ class Graph(object):
         """
 
         # Option 1 - Keep only the fist and last node of ways (save CPU usage but less accurate).
-        #for way in self.ways:
-            #fromnode = way.refs[0]
-            #tonode = way.refs[-1]
-            #try:
-                #distance = utils.EarthDistance((self.graph_info[fromnode].latitude, self.graph_info[fromnode].longitude), \
-                                                    #(self.graph_info[tonode].latitude, self.graph_info[tonode].longitude))
-                #self.addEdge(fromnode, tonode, distance, way.oneway)
-            #except:
-                #pass
+        # for way in self.ways:
+        # fromnode = way.refs[0]
+        # tonode = way.refs[-1]
+        # try:
+        # distance = utils.EarthDistance((self.graph_info[fromnode].latitude, self.graph_info[fromnode].longitude), \
+        # (self.graph_info[tonode].latitude, self.graph_info[tonode].longitude))
+        # self.addEdge(fromnode, tonode, distance, way.oneway)
+        # except:
+        # pass
 
         # Option 2 - All nodes are loaded in the graph (more CPU usage and more accurate).
         for way in self.ways:
             try:
                 for fromnode, tonode in zip(way.refs, way.refs[1:]):
-                    distance = utils.EarthDistance((self.graph_info[fromnode].latitude, self.graph_info[fromnode].longitude), \
-                                                    (self.graph_info[tonode].latitude, self.graph_info[tonode].longitude))
-                    self.addEdge(fromnode, tonode, distance, way.speed_limit, way.oneway)
+                    distance = utils.EarthDistance(
+                        (
+                            self.graph_info[fromnode].latitude,
+                            self.graph_info[fromnode].longitude,
+                        ),
+                        (
+                            self.graph_info[tonode].latitude,
+                            self.graph_info[tonode].longitude,
+                        ),
+                    )
+                    self.addEdge(
+                        fromnode, tonode, distance, way.speed_limit, way.oneway
+                    )
             except:
                 pass
 
@@ -309,32 +354,34 @@ if __name__ == "__main__":
     # Point of entry in execution mode.
     graph = Graph()
 
-    graph.addNode('A', None, None) # OSM_id, latitude, longitude
-    graph.addNode('B', None, None)
-    graph.addNode('C', None, None)
-    graph.addNode('D', None, None)
-    graph.addNode('E', None, None)
-    graph.addNode('F', None, None)
-    graph.addNode('G', None, None)
-    graph.addNode('H', None, None)
-    graph.addNode('I', None, None)
+    graph.addNode("A", None, None)  # OSM_id, latitude, longitude
+    graph.addNode("B", None, None)
+    graph.addNode("C", None, None)
+    graph.addNode("D", None, None)
+    graph.addNode("E", None, None)
+    graph.addNode("F", None, None)
+    graph.addNode("G", None, None)
+    graph.addNode("H", None, None)
+    graph.addNode("I", None, None)
 
-    graph.addEdge('C', 'A', 2, oneway=True) # OSM_id, OSM_id, cost, oneway (False by default)
-    graph.addEdge('C', 'D', 4)
-    graph.addEdge('A', 'D', 8)
-    graph.addEdge('A', 'E', 800)
+    graph.addEdge(
+        "C", "A", 2, oneway=True
+    )  # OSM_id, OSM_id, cost, oneway (False by default)
+    graph.addEdge("C", "D", 4)
+    graph.addEdge("A", "D", 8)
+    graph.addEdge("A", "E", 800)
 
-    graph.addEdge('F', 'H', 7)
-    graph.addEdge('F', 'G', 6)
-    graph.addEdge('H', 'I', 4)
+    graph.addEdge("F", "H", 7)
+    graph.addEdge("F", "G", 6)
+    graph.addEdge("H", "I", 4)
 
-    print graph
-    print
+    print(graph)
+    print()
     graph.adjacency_list()
-    print
+    print()
     graph.matrix()
-    print
-    print "Shortest path from A to D:"
-    dj = dijkstra.Dijkstra(graph.graph_structure, 'A')
-    shortest_path, distance = dj.get('D')
-    print shortest_path, distance
+    print()
+    print("Shortest path from A to D:")
+    dj = dijkstra.Dijkstra(graph.graph_structure, "A")
+    shortest_path, distance = dj.get("D")
+    print(shortest_path, distance)

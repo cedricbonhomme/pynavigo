@@ -4,55 +4,63 @@
 import math
 import time
 import datetime
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import json
-import cStringIO as StringIO
+import io as StringIO
 
 # some multipliers for interpreting GPS output
-METERS_TO_FEET  = 3.2808399 # Meters to U.S./British feet
-METERS_TO_MILES = 0.00062137119 # Meters to miles
-KNOTS_TO_MPH    = 1.1507794 # Knots to miles per hour
-KNOTS_TO_KPH    = 1.852     # Knots to kilometers per hour
-KNOTS_TO_MPS    = 0.51444444    # Knots to meters per second
-MPS_TO_KPH  = 3.6       # Meters per second to klicks/hr
-MPS_TO_MPH  = 2.2369363 # Meters/second to miles per hour
-MPS_TO_KNOTS    = 1.9438445 # Meters per second to knots
+METERS_TO_FEET = 3.2808399  # Meters to U.S./British feet
+METERS_TO_MILES = 0.00062137119  # Meters to miles
+KNOTS_TO_MPH = 1.1507794  # Knots to miles per hour
+KNOTS_TO_KPH = 1.852  # Knots to kilometers per hour
+KNOTS_TO_MPS = 0.51444444  # Knots to meters per second
+MPS_TO_KPH = 3.6  # Meters per second to klicks/hr
+MPS_TO_MPH = 2.2369363  # Meters/second to miles per hour
+MPS_TO_KNOTS = 1.9438445  # Meters per second to knots
+
 
 def translate_address_to_coordinates(address):
     """
     Translates an address to coordinates with a request
     to Google Maps.
 
-    >>> print translateAddressToCoordinates('17 chemin sous les vignes, Montenach')
+    >>> print(translateAddressToCoordinates('17 chemin sous les vignes, Montenach'))
     {'lat': 49.4226396, 'lng': 6.378915}
     """
     urlParams = {
-            'address': address,
-            'sensor': 'false',
+        "address": address,
+        "sensor": "false",
     }
-    url = 'http://maps.google.com/maps/api/geocode/json?' + urllib.urlencode(urlParams)
-    response = urllib2.urlopen(url)
+    url = "http://maps.google.com/maps/api/geocode/json?" + urllib.parse.urlencode(
+        urlParams
+    )
+    response = urllib.request.urlopen(url)
     responseBody = response.read()
     body = StringIO.StringIO(responseBody)
     result = json.load(body)
-    if 'status' not in result or result['status'] != 'OK':
+    if "status" not in result or result["status"] != "OK":
         return None
     else:
-        return {'lat': result['results'][0]['geometry']['location']['lat'], \
-                'lng': result['results'][0]['geometry']['location']['lng']}
+        return {
+            "lat": result["results"][0]["geometry"]["location"]["lat"],
+            "lng": result["results"][0]["geometry"]["location"]["lng"],
+        }
+
 
 def Deg2Rad(x):
     """
     Degrees to radians.
     """
-    return x * (math.pi/180)
+    return x * (math.pi / 180)
+
 
 def Rad2Deg(x):
     """
     Radians to degress.
     """
-    return x * (180/math.pi)
+    return x * (180 / math.pi)
+
 
 def CalcRad(lat):
     """
@@ -78,20 +86,23 @@ def CalcRad(lat):
     y = pow(z, 1.5)
     r = x / y
 
-    r = r * 1000.0      # Convert to meters
+    r = r * 1000.0  # Convert to meters
     return r
 
-def EarthDistance((lat1, lon1), (lat2, lon2)):
+
+def EarthDistance(xxx_todo_changeme, xxx_todo_changeme1):
     """
     Distance in meters between two points specified in degrees.
     """
-    x1 = CalcRad(lat1) * math.cos(Deg2Rad(lon1)) * math.sin(Deg2Rad(90-lat1))
-    x2 = CalcRad(lat2) * math.cos(Deg2Rad(lon2)) * math.sin(Deg2Rad(90-lat2))
-    y1 = CalcRad(lat1) * math.sin(Deg2Rad(lon1)) * math.sin(Deg2Rad(90-lat1))
-    y2 = CalcRad(lat2) * math.sin(Deg2Rad(lon2)) * math.sin(Deg2Rad(90-lat2))
-    z1 = CalcRad(lat1) * math.cos(Deg2Rad(90-lat1))
-    z2 = CalcRad(lat2) * math.cos(Deg2Rad(90-lat2))
-    a = (x1*x2 + y1*y2 + z1*z2)/pow(CalcRad((lat1+lat2)/2), 2)
+    (lat1, lon1) = xxx_todo_changeme
+    (lat2, lon2) = xxx_todo_changeme1
+    x1 = CalcRad(lat1) * math.cos(Deg2Rad(lon1)) * math.sin(Deg2Rad(90 - lat1))
+    x2 = CalcRad(lat2) * math.cos(Deg2Rad(lon2)) * math.sin(Deg2Rad(90 - lat2))
+    y1 = CalcRad(lat1) * math.sin(Deg2Rad(lon1)) * math.sin(Deg2Rad(90 - lat1))
+    y2 = CalcRad(lat2) * math.sin(Deg2Rad(lon2)) * math.sin(Deg2Rad(90 - lat2))
+    z1 = CalcRad(lat1) * math.cos(Deg2Rad(90 - lat1))
+    z2 = CalcRad(lat2) * math.cos(Deg2Rad(90 - lat2))
+    a = (x1 * x2 + y1 * y2 + z1 * z2) / pow(CalcRad((lat1 + lat2) / 2), 2)
     # a should be in [1, -1] but can sometimes fall outside it by
     # a very small amount due to rounding errors in the preceding
     # calculations (this is prone to happen when the argument points
@@ -100,12 +111,15 @@ def EarthDistance((lat1, lon1), (lat2, lon2)):
         a = 1
     elif a < -1:
         a = -1
-    return CalcRad((lat1+lat2) / 2) * math.acos(a)
+    return CalcRad((lat1 + lat2) / 2) * math.acos(a)
 
-def MeterOffset((lat1, lon1), (lat2, lon2)):
+
+def MeterOffset(xxx_todo_changeme2, xxx_todo_changeme3):
     """
     Return offset in meters of second arg from first.
     """
+    (lat1, lon1) = xxx_todo_changeme2
+    (lat2, lon2) = xxx_todo_changeme3
     dx = EarthDistance((lat1, lon1), (lat1, lon2))
     dy = EarthDistance((lat1, lon1), (lat2, lon1))
     if lat1 < lat2:
@@ -114,7 +128,8 @@ def MeterOffset((lat1, lon1), (lat2, lon2)):
         dx *= -1
     return (dx, dy)
 
-def delta_time(dt, delta, fmt='%Y-%m-%d %H:%M:%S'):
+
+def delta_time(dt, delta, fmt="%Y-%m-%d %H:%M:%S"):
     """
     Adds a time delta to a datetime object with a specific format.
 
@@ -125,14 +140,18 @@ def delta_time(dt, delta, fmt='%Y-%m-%d %H:%M:%S'):
     """
     try:
         return datetime.datetime(*time.strptime(dt, fmt)[:6]) + delta
-    except ValueError, e:
+    except ValueError as e:
         return e
 
-def compare_time_approx(dt1, dt2, delta=datetime.timedelta(minutes = 15), fmt='%Y-%m-%d %H:%M'):
+
+def compare_time_approx(
+    dt1, dt2, delta=datetime.timedelta(minutes=15), fmt="%Y-%m-%d %H:%M"
+):
     """
     Return True if dt1 and dt2 are approximate.
     """
     return abs((dt1 - datetime.datetime(*time.strptime(dt2, fmt)[:6]))) < delta
+
 
 def isotime(s):
     """
@@ -144,7 +163,7 @@ def isotime(s):
         date = int(s)
         msec = s - date
         date = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(s))
-        return date + "." + `msec`[2:]
+        return date + "." + repr(msec)[2:]
     elif type(s) == type(""):
         if s[-1] == "Z":
             s = s[:-1]
@@ -154,7 +173,9 @@ def isotime(s):
             date = s
             msec = "0"
         # Note: no leap-second correction!
-        return calendar.timegm(time.strptime(date, "%Y-%m-%dT%H:%M:%S")) + float("0." + msec)
+        return calendar.timegm(time.strptime(date, "%Y-%m-%dT%H:%M:%S")) + float(
+            "0." + msec
+        )
     else:
         raise TypeError
 

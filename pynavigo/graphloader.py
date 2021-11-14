@@ -12,21 +12,23 @@ import os
 import time
 import pickle
 import random
-import ConfigParser
+import configparser
 import threading
 
-import dijkstra
-import simpleGraph
-import OSM2SimpleGraph
+from . import dijkstra
+from . import simpleGraph
+from . import OSM2SimpleGraph
 
 from imposm.parser import OSMParser
+
 
 class GraphLoader(object):
     """
     Generates or loads the graph and over-graph.
     """
+
     def __init__(self, osm_file, clients_file=None, serialize=True):
-        self.nb_cores = os.sysconf('SC_NPROCESSORS_ONLN')
+        self.nb_cores = os.sysconf("SC_NPROCESSORS_ONLN")
         self.serialize = serialize
         self.osm_file = osm_file
         self.clients_file = clients_file
@@ -40,7 +42,7 @@ class GraphLoader(object):
         self.graph = None
         try:
             dump_graph = open(os.path.normpath(self.osm_file + ".dump"), "r")
-            print "Loading serialized graph from:", self.osm_file + ".dump"
+            print(("Loading serialized graph from:", self.osm_file + ".dump"))
             self.graph = pickle.load(dump_graph)
             dump_graph.close()
         except:
@@ -48,22 +50,26 @@ class GraphLoader(object):
 
             simple_graph = OSM2SimpleGraph.OSM2SimpleGraph(self.graph)
 
-            print "Generation of the graph for", self.osm_file
-            print "Creating nodes..."
-            p = OSMParser(concurrency=self.nb_cores, coords_callback=simple_graph.coords, ways_callback=simple_graph.ways)
+            print(("Generation of the graph for", self.osm_file))
+            print("Creating nodes...")
+            p = OSMParser(
+                concurrency=self.nb_cores,
+                coords_callback=simple_graph.coords,
+                ways_callback=simple_graph.ways,
+            )
             start_user = time.time()
             p.parse(self.osm_file)
-            print "Creating structures (relations between nodes and distance)..."
+            print("Creating structures (relations between nodes and distance)...")
             self.graph.create_graph_structure()
-            print "Removing isolated nodes..."
-            #nb_isolated_nodes = graph.remove_isolated_nodes()
-            #print nb_isolated_nodes, "node(s) removed."
-            print "Trying to remove islands..."
+            print("Removing isolated nodes...")
+            # nb_isolated_nodes = graph.remove_isolated_nodes()
+            # print nb_isolated_nodes, "node(s) removed."
+            print("Trying to remove islands...")
             self.graph.remove_islands()
             end_user = time.time()
-            print "Generation done."
-            print "User time:", end_user - start_user, "seconds."
-            print "Serializing graph to", self.osm_file + ".dump"
+            print("Generation done.")
+            print(("User time:", end_user - start_user, "seconds."))
+            print(("Serializing graph to", self.osm_file + ".dump"))
             dump_graph = open(os.path.normpath(self.osm_file + ".dump"), "w")
             pickle.dump(self.graph, dump_graph)
             dump_graph.close()
@@ -84,23 +90,28 @@ class GraphLoader(object):
         self.over_graph = simpleGraph.Graph()
         try:
             dump_graph = open(self.dump_over_graph, "r")
-            print "Loading serialized over-graph from:", self.dump_over_graph
+            print(("Loading serialized over-graph from:", self.dump_over_graph))
             self.over_graph = pickle.load(dump_graph)
             dump_graph.close()
         except:
             if self.clients_file == None:
                 return None
-            print "Generation of the over-graph (complete graph based only of pickup points)..."
+            print(
+                "Generation of the over-graph (complete graph based only of pickup points)..."
+            )
 
             # Automatically place pickup points at clients depart and destination nodes.
-            print "\tPreparing pickup points (based on clients departure/destination points)..."
+            print(
+                "\tPreparing pickup points (based on clients departure/destination points)..."
+            )
             clients = []
-            config = ConfigParser.RawConfigParser()
+            config = configparser.RawConfigParser()
             if self.serialize:
                 config.read(self.clients_file)
             else:
                 # When this method is called via the Web service.
-                from cStringIO import StringIO
+                from io import StringIO
+
                 f = StringIO(self.clients_file)
                 f.seek(0)
                 config.readfp(f)
@@ -110,64 +121,101 @@ class GraphLoader(object):
             clients_sections = [section for section in config.sections()]
             # Creation of clients
             for client_section in clients_sections:
-                print "\t- " + client_section
+                print(("\t- " + client_section))
                 try:
-                    client_depart_original = config.get(client_section, 'depart')
-                    client_destination_original = config.get(client_section, 'destination')
-                except ConfigParser.NoOptionError:
+                    client_depart_original = config.get(client_section, "depart")
+                    client_destination_original = config.get(
+                        client_section, "destination"
+                    )
+                except configparser.NoOptionError:
                     continue
                 try:
-                    client_depart_latitude_original = float(client_depart_original.split(' ')[0])
-                    client_depart_longitude_original = float(client_depart_original.split(' ')[1])
-                    client_destination_latitude_original = float(client_destination_original.split(' ')[0])
-                    client_destination_longitude_original = float(client_destination_original.split(' ')[1])
+                    client_depart_latitude_original = float(
+                        client_depart_original.split(" ")[0]
+                    )
+                    client_depart_longitude_original = float(
+                        client_depart_original.split(" ")[1]
+                    )
+                    client_destination_latitude_original = float(
+                        client_destination_original.split(" ")[0]
+                    )
+                    client_destination_longitude_original = float(
+                        client_destination_original.split(" ")[1]
+                    )
                 except (ValueError, IndexError):
                     continue
 
-                client_depart_OSM, client_depart_latitude, client_depart_longitude = \
-                                self.graph.osm_node_from_coordinates(client_depart_latitude_original, \
-                                                            client_depart_longitude_original)
-                client_destination_OSM, client_destination_latitude, client_destination_longitude = \
-                                self.graph.osm_node_from_coordinates(client_destination_latitude_original, \
-                                                            client_destination_longitude_original)
-                clients.append((client_depart_OSM, client_depart_latitude, client_depart_longitude, \
-                                client_destination_OSM, client_destination_latitude, client_destination_longitude))
+                (
+                    client_depart_OSM,
+                    client_depart_latitude,
+                    client_depart_longitude,
+                ) = self.graph.osm_node_from_coordinates(
+                    client_depart_latitude_original, client_depart_longitude_original
+                )
+                (
+                    client_destination_OSM,
+                    client_destination_latitude,
+                    client_destination_longitude,
+                ) = self.graph.osm_node_from_coordinates(
+                    client_destination_latitude_original,
+                    client_destination_longitude_original,
+                )
+                clients.append(
+                    (
+                        client_depart_OSM,
+                        client_depart_latitude,
+                        client_depart_longitude,
+                        client_destination_OSM,
+                        client_destination_latitude,
+                        client_destination_longitude,
+                    )
+                )
 
-            nodes=[]
+            nodes = []
             result = []
             # pickup points will be departure and destinations of clients
             for client in clients:
                 nodes.append(client[0])
                 nodes.append(client[3])
             # insert random pickup points
-            #for i in range(5000):
-                #node = random.choice(self.graph.graph_structure.keys())
-                #nodes.append(node)
+            # for i in range(5000):
+            # node = random.choice(self.graph.graph_structure.keys())
+            # nodes.append(node)
 
             for node in nodes:
-                self.over_graph.addNode(node, self.graph.get_node(node).longitude, self.graph.get_node(node).latitude)
+                self.over_graph.addNode(
+                    node,
+                    self.graph.get_node(node).longitude,
+                    self.graph.get_node(node).latitude,
+                )
                 dj = dijkstra.Dijkstra(self.graph.graph_structure, node)
                 for node1 in nodes:
                     shortest_path, distance = dj.get(node1)
                     if shortest_path != []:
                         average = self.graph.average_speed(shortest_path)
-                        self.over_graph.addNode(node1, self.graph.get_node(node1).longitude, self.graph.get_node(node1).latitude)
-                        self.over_graph.addEdge(node, node1, distance+75*4, average, False)
+                        self.over_graph.addNode(
+                            node1,
+                            self.graph.get_node(node1).longitude,
+                            self.graph.get_node(node1).latitude,
+                        )
+                        self.over_graph.addEdge(
+                            node, node1, distance + 75 * 4, average, False
+                        )
 
-            #list_threads = []
-            #for i in range(self.nb_cores + 1):
-                ## Each thread (hopefully each core) will process a part of the list of pickup points
-                #sublist =  nodes[(i*(len(nodes))/self.nb_cores):((i+1)*(len(nodes)/self.nb_cores))]
-                #thr = threading.Thread(None, self.create_new_edges, None, (sublist,))
-                #list_threads.append(thr)
-                #thr.start()
+            # list_threads = []
+            # for i in range(self.nb_cores + 1):
+            ## Each thread (hopefully each core) will process a part of the list of pickup points
+            # sublist =  nodes[(i*(len(nodes))/self.nb_cores):((i+1)*(len(nodes)/self.nb_cores))]
+            # thr = threading.Thread(None, self.create_new_edges, None, (sublist,))
+            # list_threads.append(thr)
+            # thr.start()
 
-            #for thread in list_threads:
-                ## Waiting for all threads to be done.
-                #thread.join()
+            # for thread in list_threads:
+            ## Waiting for all threads to be done.
+            # thread.join()
 
             if self.serialize:
-                print "Serializing graph to", self.dump_over_graph
+                print(("Serializing graph to", self.dump_over_graph))
                 dump_graph = open(self.dump_over_graph, "w")
                 pickle.dump(self.over_graph, dump_graph)
                 dump_graph.close()
@@ -180,26 +228,44 @@ class GraphLoader(object):
         Called in a separate thread.
         """
         for node in nodes:
-            self.over_graph.addNode(node, self.graph.get_node(node).longitude, self.graph.get_node(node).latitude)
+            self.over_graph.addNode(
+                node,
+                self.graph.get_node(node).longitude,
+                self.graph.get_node(node).latitude,
+            )
             dj = dijkstra.Dijkstra(self.graph.graph_structure, node)
             for node1 in nodes:
                 shortest_path, distance = dj.get(node1)
                 if shortest_path != []:
                     average = self.graph.average_speed(shortest_path)
-                    self.over_graph.addNode(node1, self.graph.get_node(node1).longitude, self.graph.get_node(node1).latitude)
-                    self.over_graph.addEdge(node, node1, distance+75*4, average, False)
-
+                    self.over_graph.addNode(
+                        node1,
+                        self.graph.get_node(node1).longitude,
+                        self.graph.get_node(node1).latitude,
+                    )
+                    self.over_graph.addEdge(
+                        node, node1, distance + 75 * 4, average, False
+                    )
 
 
 if __name__ == "__main__":
     # Point of entry in execution mode
     from optparse import OptionParser
+
     parser = OptionParser()
 
-    parser.add_option("-m", "--map", dest="osm_file",
-                        help="Path to the OSM map file (OSM, PBF or BZ2).")
-    parser.add_option("-g", "--graph", dest="graph_type",
-                        help="Type of the graph to generate (simple or complete.")
+    parser.add_option(
+        "-m",
+        "--map",
+        dest="osm_file",
+        help="Path to the OSM map file (OSM, PBF or BZ2).",
+    )
+    parser.add_option(
+        "-g",
+        "--graph",
+        dest="graph_type",
+        help="Type of the graph to generate (simple or complete.",
+    )
 
     parser.set_defaults(graph_type="graph")
 
@@ -215,4 +281,4 @@ if __name__ == "__main__":
         else:
             gl.load_graph()
             gl.load_over_graph()
-            #load_over_graph(os.path.splitext(OSM_FILE)[0] + "_over-graph.dump")
+            # load_over_graph(os.path.splitext(OSM_FILE)[0] + "_over-graph.dump")

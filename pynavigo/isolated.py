@@ -7,13 +7,15 @@ __revision__ = "$Date: 2012/04/03 $"
 __license__ = ""
 
 import sys
-import simpleGraph
+from . import simpleGraph
+
 
 class RemoveIslands(object):
     """
     Remove islands in a graph. Return there
     biggest connected graph.
     """
+
     def __init__(self, graph):
         """
         Initializes variables and set the maximum recursion limit to
@@ -24,12 +26,12 @@ class RemoveIslands(object):
         self.checked = []
         self.allnodes = []
         self.bigestGraph = []
-        self.allnodes = self.graph.graph_structure.keys()
+        self.allnodes = list(self.graph.graph_structure.keys())
         sys.setrecursionlimit(len(self.allnodes))
 
     def getNodesIslands(self):
         n = 0
-        maxi = 0;
+        maxi = 0
         while True:
             self.checked = []
             self.getIsland(self.allnodes[0])
@@ -44,10 +46,10 @@ class RemoveIslands(object):
             n = n + 1
             if len(self.allnodes) == 0:
                 break
-        #return self.graphs
+        # return self.graphs
         return self.bigestGraph
 
-    def getIsland(self,node):
+    def getIsland(self, node):
         if node in self.checked:
             return
         self.checked.append(node)
